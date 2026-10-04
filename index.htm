@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ez - مدير لعبة بصرة</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font: Tajawal for Arabic support -->
+    <link href="https://cdn.jsdelivr.net/npm/@fontsource/tajawal@5.0.8/index.min.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569; 
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1', // Indigo
+                        secondary: '#ec4899', // Pink
+                        darkBg: '#0f172a',
+                        lightBg: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-lightBg text-slate-800 dark:bg-darkBg dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-white">
+
+    <!-- Navbar -->
+    <nav class="w-full p-4 flex justify-between items-center glass-card sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80">
+        <div class="flex items-center gap-2">
+            <div class="bg-gradient-to-tr from-primary to-secondary w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">E</div>
+            <h1 class="text-xl font-bold tracking-tight">مدير بصرة</h1>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+            <i data-lucide="sun" class="hidden dark:block w-5 h-5"></i>
+            <i data-lucide="moon" class="block dark:hidden w-5 h-5"></i>
+        </button>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-3xl relative">
+        
+        <!-- Screen 1: Setup -->
+        <section id="setup-screen" class="animate-fade-in space-y-6">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2">إعدادات اللعبة</h2>
+                <p class="text-slate-500 dark:text-slate-400">أدخل أسماء اللاعبين وحدد نقاط الفوز</p>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700">
+                <!-- Limit Input -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">نقاط الفوز (Limit)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="limit-input" value="200" class="flex-grow p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary outline-none transition-all text-center font-mono text-lg">
+                        <div class="flex flex-col gap-1">
+                            <button onclick="setLimit(200)" class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-primary hover:text-white transition">200</button>
+                            <button onclick="setLimit(300)" class="px-3 py-1 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-primary hover:text-white transition">300</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Players Input -->
+                <div class="space-y-4">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">اللاعبون</label>
+                    <div id="players-list" class="space-y-3">
+                        <!-- Dynamic Inputs go here -->
+                    </div>
+                    
+                    <button onclick="addPlayerInput()" class="w-full py-3 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-500 hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-2 font-medium">
+                        <i data-lucide="plus" class="w-4 h-4"></i> إضافة لاعب
+                    </button>
+                </div>
+
+                <button onclick="startGame()" class="mt-8 w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-indigo-600 hover:to-primary text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/30 active:scale-95 transition-all">
+                    ابدأ اللعبة 🚀
+                </button>
+            </div>
+        </section>
+
+        <!-- Screen 2: Game Dashboard -->
+        <section id="game-screen" class="hidden space-y-6">
+            
+            <!-- Header Info -->
+            <div class="flex justify-between items-end bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-md border border-slate-100 dark:border-slate-700">
+                <div>
+                    <span class="text-xs text-slate-500 uppercase tracking-wider font-bold">الجولة الحالية</span>
+                    <div class="text-3xl font-black text-primary" id="round-display">1</div>
+                </div>
+                <div class="text-left">
+                    <span class="text-xs text-slate-500 uppercase tracking-wider font-bold">هدف الفوز</span>
+                    <div class="text-xl font-bold text-secondary" id="limit-display">200</div>
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div id="scoreboard" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Player Cards generated via JS -->
+            </div>
+
+            <!-- Round Controls -->
+            <div class="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-40 pointer-events-none">
+                <button onclick="endRound()" class="pointer-events-auto bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-8 py-4 rounded-full font-bold shadow-2xl flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                    <span>إنهاء الجولة وبدء جديدة</span>
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Reset Button (Small) -->
+            <div class="text-center mt-8 pb-20">
+                <button onclick="resetGame()" class="text-sm text-red-400 hover:text-red-600 underline">إنهاء اللعبة والعودة للإعدادات</button>
+            </div>
+        </section>
+
+        <!-- Modal: Winner -->
+        <div id="winner-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl p-8 text-center animate-fade-in shadow-2xl border border-white/20 relative overflow-hidden">
+                <!-- Confetti Canvas could go here -->
+                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-purple-500 to-secondary"></div>
+                
+                <div class="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">🏆</div>
+                <h2 class="text-2xl font-bold mb-2">مبروك!</h2>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">الفائز في هذه الجولة هو</p>
+                
+                <div class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary mb-8" id="winner-name">
+                    اسم اللاعب
+                </div>
+
+                <button onclick="closeWinnerModal()" class="w-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 py-3 rounded-xl font-bold transition-colors">
+                    متابعة اللعب
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- State Management ---
+        let state = {
+            players: [], // { id, name, totalScore, roundScore }
+            limit: 200,
+            currentRound: 1,
+            isGameActive: false
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initTheme();
+            // Add default 2 inputs
+            addPlayerInput();
+            addPlayerInput();
+        });
+
+        // --- Theme Logic ---
+        function initTheme() {
+            const toggleBtn = document.getElementById('theme-toggle');
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                if (document.documentElement.classList.contains('dark')) {
+                    localStorage.theme = 'dark';
+                } else {
+                    localStorage.theme = 'light';
+                }
+            });
+        }
+
+        // --- Setup Screen Logic ---
+        function setLimit(val) {
+            document.getElementById('limit-input').value = val;
+        }
+
+        function addPlayerInput() {
+            const container = document.getElementById('players-list');
+            const count = container.children.length + 1;
+            
+            const div = document.createElement('div');
+            div.className = 'relative group animate-fade-in';
+            div.innerHTML = `
+                <input type="text" placeholder="اسم اللاعب ${count}" class="player-name-input w-full p-3 pr-10 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary outline-none transition-all">
+                <button onclick="this.parentElement.remove()" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors ${count <= 2 ? 'invisible' : ''}">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+        }
+
+        function startGame() {
+            const limitVal = parseInt(document.getElementById('limit-input').value);
+            const nameInputs = document.querySelectorAll('.player-name-input');
+            
+            const newPlayers = [];
+            let valid = true;
+
+            nameInputs.forEach((input, index) => {
+                const name = input.value.trim() || `لاعب ${index + 1}`;
+                newPlayers.push({
+                    id: Date.now() + index,
+                    name: name,
+                    totalScore: 0,
+                    roundScore: 0
+                });
+            });
+
+            if (newPlayers.length < 2) {
+                alert("يجب إضافة لاعبين اثنين على الأقل");
+                return;
+            }
+
+            state.limit = limitVal || 200;
+            state.players = newPlayers;
+            state.currentRound = 1;
+            state.isGameActive = true;
+
+            switchScreen('game-screen');
+            renderScoreboard();
+            updateHeader();
+        }
+
+        // --- Game Logic ---
+        function renderScoreboard() {
+            const board = document.getElementById('scoreboard');
+            board.innerHTML = '';
+
+            state.players.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-4 animate-fade-in relative overflow-hidden';
+                
+                // Progress bar background
+                const progress = Math.min((player.totalScore / state.limit) * 100, 100);
+                
+                card.innerHTML = `
+                    <div class="absolute bottom-0 left-0 h-1 bg-primary transition-all duration-1000 ease-out" style="width: ${progress}%"></div>
+                    
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-lg truncate max-w-[150px]">${player.name}</h3>
+                        <span class="text-xs font-mono bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-500">المجموع: ${player.totalScore}</span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="flex-grow">
+                            <label class="text-xs text-slate-400 block mb-1">نقاط هذه الجولة</label>
+                            <input type="number" 
+                                data-player-id="${player.id}" 
+                                value="${player.roundScore}" 
+                                onchange="updateRoundScore(${player.id}, this.value)"
+                                class="w-full text-2xl font-bold bg-transparent border-b-2 border-slate-200 dark:border-slate-700 focus:border-primary outline-none py-1 transition-colors text-center"
+                                placeholder="0">
+                        </div>
+                    </div>
+                `;
+                board.appendChild(card);
+            });
+        }
+
+        function updateRoundScore(playerId, score) {
+            const player = state.players.find(p => p.id === playerId);
+            if (player) {
+                player.roundScore = parseInt(score) || 0;
+            }
+        }
+
+        function endRound() {
+            // 1. Update Total Scores
+            let winner = null;
+            let maxScore = -1;
+
+            state.players.forEach(player => {
+                player.totalScore += player.roundScore;
+                player.roundScore = 0; // Reset for next input
+                
+                // Check Win Condition logic
+                // "يحسب من اللاعب الأعلى الذي حقق هذا الlimit"
+                // Interpretation: If multiple pass limit, highest score wins immediately?
+                // Or just whoever passes first? Let's check highest score >= limit.
+                if (player.totalScore >= state.limit) {
+                    if (player.totalScore > maxScore) {
+                        maxScore = player.totalScore;
+                        winner = player;
+                    }
+                }
+            });
+
+            // 2. Render updates
+            renderScoreboard();
+
+            // 3. Check Winner
+            if (winner) {
+                showWinner(winner);
+            } else {
+                // Increment Round
+                state.currentRound++;
+                updateHeader();
+                // Optional: Toast notification "Round Started"
+            }
+        }
+
+        function updateHeader() {
+            document.getElementById('round-display').innerText = state.currentRound;
+            document.getElementById('limit-display').innerText = state.limit;
+        }
+
+        // --- UI Helpers ---
+        function switchScreen(screenId) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function showWinner(player) {
+            const modal = document.getElementById('winner-modal');
+            document.getElementById('winner-name').innerText = player.name;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Simple confetti effect using emoji explosion (optional visual flair)
+            triggerConfetti();
+        }
+
+        function closeWinnerModal() {
+            const modal = document.getElementById('winner-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            resetGame(); // Game over, back to setup
+        }
+
+        function resetGame() {
+            state.isGameActive = false;
+            switchScreen('setup-screen');
+        }
+
+        // Basic Confetti Implementation
+        function triggerConfetti() {
+            const colors = ['#6366f1', '#ec4899', '#fbbf24'];
+            const container = document.body;
+            
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'fixed';
+                conf.style.left = '50%';
+                conf.style.top = '50%';
+                conf.style.width = '10px';
+                conf.style.height = '10px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.transition = 'all 1s ease-out';
+                conf.style.zIndex = '100';
+                conf.style.borderRadius = '50%';
+                container.appendChild(conf);
+
+                // Random direction
+                const x = (Math.random() - 0.5) * window.innerWidth;
+                const y = (Math.random() - 0.5) * window.innerHeight;
+
+                requestAnimationFrame(() => {
+                    conf.style.transform = `translate(${x}px, ${y}px) scale(0)`;
+                    conf.style.opacity = '0';
+                });
+
+                setTimeout(() => conf.remove(), 1000);
+            }
+        }
+    </script>
+</body>
+</html>
